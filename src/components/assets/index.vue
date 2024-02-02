@@ -1,0 +1,110 @@
+<script setup lang="ts">
+import TokenAssets from './token-assets.vue'
+import { NCard, NSelect, NSpace, NCheckbox, NCheckboxGroup } from 'naive-ui'
+import { useContractStore } from '@/stores/contract';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useWalletStore } from '@/stores/wallet';
+import { useKeyStore } from '@/stores/key';
+
+const keyStore = useKeyStore()
+const walletStore = useWalletStore()
+const contractStore = useContractStore()
+
+// const addressList = ref<string[]>([])//['0xe7Bbc2A3D9381A159CdC2DE6e86Aa080E0D9345C','0x400e2a7444dEa936b98190785CCcAb200B85Bc9F', '0xe91AcA39972c1Be2432e8ab15aEB51a39D706210']
+
+// 0 bnb, 1 ai, 2 doge
+// const contractAddressList = ['0', '0xf2cd9944de065185e1ee867d74f66625b7a1cad6', '0xba2ae424d960c26247dd6c32edc70b295c744c43']
+
+// erc20 token address
+const contractAddressList = ref<Chain.Token[]>([])
+
+const nativeCurrency = computed(() => {
+    return walletStore.networks.filter(item => item.chainId == walletStore.activeNetwork)
+        .map(item => ({
+            name: item.nativeCurrency,
+            symbol: item.nativeCurrency,
+            decimals: 18,
+            // 默认为 0 时通过 getBalance 查询资产
+            address: '0',
+            chainId: item.chainId
+        }))[0]
+})
+
+const activeNetwork = computed(() => walletStore.activeNetwork)
+const groupOptions = computed(() => [
+    {type: 'group', label: 'HD Wallet', children: keyStore.hdWallet.map(item => ({ label: item.name, value: `0-HD-${item.name}` }))},
+    {type: 'group', label: 'Simple Wallet', children: walletStore.groups.map(item => ({ label: item.name, value: `${item.id}` }))}
+])
+const tokenOptions = computed(() => contractStore.tokens.filter(item => item.chainId == walletStore.activeNetwork))
+const selectedTokens = ref<string[]>([])
+const selectedGroup = ref<string>()
+
+function initTokens() {
+    selectedTokens.value = []
+    contractAddressList.value = []
+
+}
+
+onMounted(() => {
+    initTokens()
+})
+
+watch(activeNetwork, () => {
+    initTokens()
+})
+
+watch(selectedTokens, () => {
+    if (selectedTokens.value.length == 0) {
+        contractAddressList.value = []
+        return
+    }
+    const selectedList = selectedTokens.value
+    // 删除已经不存在的
+    const removed = contractAddressList.value.map((item, index) => selectedList.includes(item.address) ? -1 : index).filter(item => item != -1).reverse()
+    for (const index of removed) {
+        contractAddressList.value.splice(index, 1)
+    }
+
+    // 添加新增的
+    const addressList = contractAddressList.value.map(item => item.address)
+    const addList = selectedList.filter(item => !addressList.includes(item))
+    const addTokenList = contractStore.tokens.filter(item => item.chainId == activeNetwork.value && addList.includes(item.address))
+    for (const item of addTokenList) {
+        contractAddressList.value.push(item)
+    }
+})
+
+watch(tokenOptions, () => {
+    // 新增 token 时不受影响
+    // 删除 token 时，对应选中的 token 要删除
+    const existList = tokenOptions.value.map(item => item.address)
+    const index = selectedTokens.value.findIndex(item => !existList.includes(item))
+    if (index >= 0) {
+        selectedTokens.value.splice(index, 1)
+    }
+    const index2 = contractAddressList.value.findIndex(item => !existList.includes(item.address))
+    if (index2 >= 0) {
+        contractAddressList.value.splice(index2, 1)
+    }
+
+})
+
+</script>
+
+<template>
+    <n-space vertical>
+        <n-card>
+            <n-space align="center">
+                <div>Group</div>
+                <n-select :options="groupOptions" v-model:value="selectedGroup" :style="{ width: '300px' }" />
+            </n-space>
+            <n-checkbox-group v-model:value="selectedTokens">
+                <n-checkbox v-for="item of tokenOptions" :value="item.address" :label="item.symbol" />
+            </n-checkbox-group>
+
+        </n-card>
+
+        <TokenAssets v-if="nativeCurrency && selectedGroup" :token="nativeCurrency" :group-id="selectedGroup" />
+        <TokenAssets v-if="selectedGroup" v-for="item of contractAddressList" :token="item" :group-id="selectedGroup" />
+    </n-space>
+</template>
