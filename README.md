@@ -21,7 +21,6 @@
         - 一对多
         - 多对一
 
-
 ## 开发说明
 
 当前主要用到的技术栈如下
@@ -30,8 +29,19 @@
 - naive-ui
 - typescript
 - pinia
-- ethers.js 未避免安全问题，web3 相关的依赖非必要不再引入
+- ethers.js 为避免安全问题，web3 相关的依赖非必要不再引入
 - pnpm 依赖管理
 
 ### 存储
 
+- wallet
+  - address
+  - group
+- chain
+  - network
+  - token
+  - contract
+  - transaction
+- key
+  - hd
+  - private key

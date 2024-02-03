@@ -1,7 +1,6 @@
-import type { JsonFragment } from 'ethers'
-
-
 declare namespace Chain {
+import { JsonFragment } from 'ethers'
+
     interface Token {
         address: string
         name: string
@@ -27,5 +26,17 @@ declare namespace Chain {
         to: string
         count: string
         createdAt: number
+    }
+
+    interface Network {
+        chainId: string
+        domain: string
+        subdomain: string
+        name: string
+        nativeCurrency: string
+        rpcUrl: string
+        blockExplorerUrl: string
+        imageUrl: string
+        isTest: boolean
     }
 }

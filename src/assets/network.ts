@@ -1,4 +1,4 @@
-export const DEFAULT_NETWORKS:Wallet.Network[] = [
+export const DEFAULT_NETWORKS: Chain.Network[] = [
     {
         chainId: '0x38',
         domain: 'bscscan.com',

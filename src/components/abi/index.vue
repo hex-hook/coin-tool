@@ -2,13 +2,11 @@
 import { NAnchor, NAnchorLink, NSpace, NInput, NButton, NCard, useMessage, NLayout, NLayoutContent, NLayoutHeader, NLayoutSider } from 'naive-ui'
 import { ref } from 'vue';
 import Caller from './caller.vue'
-import { useContractStore } from '@/stores/contract';
-import { useWalletStore } from '@/stores/wallet';
+import { useChainStore } from '@/stores/chain';
 import type { JsonFragment } from 'ethers'
 
 const message = useMessage()
-const contractStore = useContractStore()
-const walletStore = useWalletStore()
+const chainStore = useChainStore()
 
 
 const abiText = ref('')
@@ -43,10 +41,10 @@ function saveContract() {
         message.error(`contract address is failed`)
         return
     }
-    contractStore.saveContract({
+    chainStore.saveContract({
         address: contractAddress.value,
         description: description.value,
-        chainId: walletStore.activeNetwork,
+        chainId: chainStore.activeChainId,
         abi: contractAbi.value
     })
 }

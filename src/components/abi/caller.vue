@@ -8,6 +8,7 @@ import ContractConfirm from '@/components/contract/confirm.vue'
 import { ChevronDownCircleOutline, ChevronUpCircleOutline } from '@vicons/ionicons5'
 import { JsonFragment, TransactionLike, ethers } from 'ethers'
 import { useProvider } from '@/hooks/provider';
+import { useChainStore } from '@/stores/chain';
 
 interface Props {
     data: JsonFragment
@@ -32,7 +33,7 @@ const emit = defineEmits<Emits>()
 const dialog = useDialog()
 const message = useMessage()
 const keyStore = useKeyStore()
-const walletStore = useWalletStore()
+const chainStore = useChainStore()
 
 const values = ref<string[]>([])
 const response = ref('')
@@ -72,8 +73,8 @@ async function sendContract() {
     }
     const from = selectedAddress.value
     const to = props.address
-    const chainId = walletStore.activeNetwork
-    const network = walletStore.networks.find(item => item.chainId == chainId)
+    const chainId = chainStore.activeChainId
+    const network = chainStore.networks.find(item => item.chainId == chainId)
     if (!network) {
         message.error('network is failed')
         return

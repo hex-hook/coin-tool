@@ -30,12 +30,12 @@ function checkAddress(): boolean {
     addressState.value = false
     const cur = address.value.trim()
     if (cur.length != 42 && !cur.startsWith('0x')) {
-        message.error('addres is failed')
+        message.error('address is failed')
         return false
     }
     const old = walletStore.wallets.find(item => item.address == cur)
     if (old) {
-        message.error('addres is already exist')
+        message.error('address is already exist')
         return false
     }
     addressState.value = true

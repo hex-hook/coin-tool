@@ -1,15 +1,12 @@
 import { defineStore } from "pinia";
-import { DEFAULT_NETWORKS } from '@/assets/network'
 
 interface WalletState {
     // simple wallet and hd wallet, but hd wallet group is 0
     wallets: Wallet.Address[]
     groups: Wallet.Group[]
-    networks: Wallet.Network[]
-    activeNetwork: string
 }
 
-const _key = 'wallet_v0.1'
+const _key = 'wallet_v0.2'
 
 function getDefault(): WalletState {
     return {
@@ -19,8 +16,6 @@ function getDefault(): WalletState {
             name: 'default',
             description: ''
         }],
-        networks: DEFAULT_NETWORKS,
-        activeNetwork: DEFAULT_NETWORKS[0].chainId
     }
 }
 function loadStore(): WalletState {
@@ -42,20 +37,11 @@ export const useWalletStore = defineStore('wallets', {
     state: (): WalletState => {
         return loadStore()
     },
-    getters: {
-        getAll: (state) => () => {
-            return state.wallets
-        }
-        ,
-        getByGroup: (state) => (groupId: number) => {
-            return state.wallets.filter(item => item.group == groupId)
-        },
-    },
     actions: {
         add(item: Wallet.Address) {
             const index = this.wallets.findIndex(o => o.address == item.address)
             if (index >= 0) {
-                console.warn(`${item.address} is arealy exist`)
+                console.warn(`${item.address} is already exist`)
                 return false
             }
             this.wallets.push(item)
@@ -84,7 +70,7 @@ export const useWalletStore = defineStore('wallets', {
         addGroup(item: Wallet.Group) {
             const index = this.groups.findIndex(o => o.id == item.id)
             if (index >= 0) {
-                console.warn(`${item} is arealy exist`)
+                console.warn(`${item} is already exist`)
                 return false
             }
             this.groups.push(item)
@@ -114,31 +100,6 @@ export const useWalletStore = defineStore('wallets', {
             this.groups.splice(index, 1)
             this.record()
             return true
-        },
-        updateNetwork(chainId: string) {
-            const index = this.networks.findIndex(item => item.chainId == chainId)
-            if (index >= 0) {
-                this.activeNetwork = chainId
-                this.record()
-            }
-        },
-        addNetwork(item: Wallet.Network) {
-            const index = this.networks.findIndex(o => o.chainId == item.chainId)
-            if (index >= 0) {
-                console.error('chain is already exist')
-                return false
-            }
-            this.networks.push(item)
-            this.record()
-        },
-        deleteNetwork(chainId: string) {
-            const index = this.networks.findIndex(item => item.chainId == chainId)
-            if (index < 0) {
-                console.log(`not found chain [${chainId}]`)
-                return false
-            }
-            this.networks.splice(index, 1)
-            this.record()
         },
         record() {
             saveStore(this.$state)

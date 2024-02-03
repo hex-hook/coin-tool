@@ -1,29 +1,29 @@
 <script setup lang="ts">
 import { NButton, NPopselect, useMessage } from 'naive-ui'
 import { computed, ref, watch } from 'vue'
-import { useWalletStore } from '@/stores/wallet';
+import { useChainStore } from '@/stores/chain'
 
 
 const message = useMessage()
-const walletStore = useWalletStore()
+const chainStore = useChainStore()
 
 
-const networkOptions = computed(() => walletStore.networks.map(item => ({value: item.chainId, label: item.name})))
+const networkOptions = computed(() => chainStore.networks.map(item => ({value: item.chainId, label: item.name})))
 
-const current = ref(walletStore.activeNetwork)
+const current = ref(chainStore.activeChainId)
 
 watch(current, () => {
-    const network = walletStore.networks.find(item => item.chainId == current.value)
+    const network = chainStore.networks.find(item => item.chainId == current.value)
     if (!network) {
         message.error(`not found network by chain id: [${current.value}], Please make sure it exists.`)
         return
     }
-    walletStore.updateNetwork(network.chainId)
+    chainStore.updateActiveNetwork(network.chainId)
     message.success(`switch to ${network.name} success`)
 })
     
 const networkInfo = computed(() => {
-    const network = walletStore.networks.find(item => item.chainId == current.value)
+    const network = chainStore.networks.find(item => item.chainId == current.value)
     if (!network) {
         return null
     }

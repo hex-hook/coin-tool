@@ -1,19 +1,18 @@
 <script setup lang="ts">
 import { NIcon, useMessage, useDialog, NCard, NTable, NSpace, NButton, NInput } from 'naive-ui'
-import { useContractStore } from '@/stores/contract'
-import { computed, ref } from 'vue';
-import { useWalletStore } from '@/stores/wallet'
+import { useChainStore } from '@/stores/chain'
+import { ref } from 'vue';
 import { Pencil, CheckmarkCircle } from '@vicons/ionicons5'
 import Caller from '@/components/abi/caller.vue'
 import type { JsonFragment } from 'ethers'
+import { useContracts } from '@/hooks/chain'
 
 
-const contractStore = useContractStore()
-const walletStore = useWalletStore()
+const chainStore = useChainStore()
 const message = useMessage()
 const dialog = useDialog()
 
-const contractList = computed(() => contractStore.contracts.filter(item => item.chainId == walletStore.activeNetwork))
+const contractList = useContracts()
 const editDescription = ref('')
 const editAddress = ref('')
 
@@ -28,7 +27,7 @@ function deleteHandle(address: string, chainId: string) {
         negativeText: '取消',
         positiveText: '确定',
         onPositiveClick: () => {
-            if (contractStore.deleteContract(address, chainId)) {
+            if (chainStore.deleteContract(address, chainId)) {
                 message.success('delete contract success')
             }
 
@@ -45,7 +44,7 @@ function saveDescription(address: string, chainId: string) {
         return
     }
     data.description = description
-    contractStore.saveContract(data)
+    chainStore.saveContract(data)
 }
 
 function callHandle(address: string, chainId: string) {

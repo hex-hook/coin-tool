@@ -5,9 +5,11 @@ import { useKeyStore } from '@/stores/key';
 import { useWalletStore } from '@/stores/wallet';
 import { Close, Pencil, Save } from '@vicons/ionicons5';
 import { getAddress } from 'ethers';
+import { useChainStore } from '@/stores/chain';
 
-const keyStore = useKeyStore()
-const walletStore = useWalletStore()
+const keyStore = useKeyStore();
+const walletStore = useWalletStore();
+const chainStore = useChainStore();
 
 
 
@@ -82,7 +84,7 @@ function saveName() {
         createdAt: Date.now(),
         hasPrivateKey: true,
     }
-    // walletStore.udpate(item)
+    chainStore.updateToken(item);
     const index = addressInfoList.value.findIndex(item => item.address == editNameAddress.value)
 
     if (index < 0) {

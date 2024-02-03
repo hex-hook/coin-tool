@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { useMessage, NCard, NSpace, NButton, NInput, NSwitch, NInputNumber } from 'naive-ui'
 import { ref } from 'vue';
-import { useWalletStore } from '@/stores/wallet'
+import { useChainStore } from '@/stores/chain'
 
 interface Emits {
     (e: 'close'): void
 }
 
-const walletStore = useWalletStore()
+const chainStore = useChainStore()
 const message = useMessage()
 const emit = defineEmits<Emits>()
 
@@ -47,7 +47,7 @@ function checkData(): boolean {
         message.error('nativeCurrency is null')
         return false
     }
-    const index = walletStore.networks.findIndex(item => item.chainId == convert16(chainId.value))
+    const index = chainStore.networks.findIndex(item => item.chainId == convert16(chainId.value))
     if (index >= 0) {
         message.error('Chain is already exist')
         return false
@@ -60,7 +60,7 @@ function save() {
     if (!checkData()) {
         return
     }
-    walletStore.addNetwork({
+    chainStore.addNetwork({
         chainId: convert16(chainId.value),
         name: name.value,
         nativeCurrency: nativeCurrency.value,

@@ -1,23 +1,23 @@
 <script setup lang="ts">
 import { NSpace, useMessage, NCard, NTable, NButton, NModal } from 'naive-ui'
 import { computed, ref } from 'vue';
-import { useWalletStore } from '@/stores/wallet';
+import { useChainStore } from '@/stores/chain'
 import Add from './add.vue'
 
 const _chainIdList = ['0x38', '0x1', '0x61', '0x5', '0xaa36a7']
 
 const message = useMessage()
-const walletStore = useWalletStore()
+const chainStore = useChainStore()
 const showModal = ref(false)
 
-const networks = computed(() => walletStore.networks)
+const networks = computed(() => chainStore.networks)
 
 function deleteHandle(chainId: string) {
     if (_chainIdList.includes(chainId)) {
         message.error(`chain [${chainId}] can not delete`)
         return
     }
-    walletStore.deleteNetwork(chainId)
+    chainStore.deleteNetwork(chainId)
 }
 
 

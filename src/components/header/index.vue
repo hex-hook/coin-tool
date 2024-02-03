@@ -2,8 +2,7 @@
 import { NModal, NCard, NSpace, NIcon, NButton } from 'naive-ui'
 import { Sunny, MoonOutline, SettingsSharp, LockClosed, LockOpen } from '@vicons/ionicons5'
 import { computed, ref, watch } from 'vue';
-import Network from './network.vue'
-import Settings from '@/components/settings/index.vue'
+import Network from './network.vue';
 import { useKeyStore } from '@/stores/key';
 import Verify from './verify.vue'
 
@@ -34,9 +33,6 @@ function lockHandle() {
 
 <template>
     <n-space justify="center" :style="{height: '60px'}">
-        <n-modal v-model:show="showModal">
-            <settings @close="showModal=false"/>
-        </n-modal>
         <n-modal v-model:show="isLock" :mask-closable="false">
             <Verify  />
         </n-modal>

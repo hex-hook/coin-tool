@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { NCard, NInput, NSpace, NInputNumber, NButton, useMessage } from 'naive-ui'
 import { ref } from 'vue';
-import { useContractStore } from '@/stores/contract'
-import { useWalletStore } from '@/stores/wallet';
+import { useChainStore } from '@/stores/chain'
 import { useProvider, useERC20ByProvider } from '@/hooks/provider';
 
 interface Emits {
@@ -11,8 +10,7 @@ interface Emits {
 
 const message = useMessage()
 
-const walletStore = useWalletStore()
-const contractStore = useContractStore()
+const chainStore = useChainStore()
 
 const provider = useProvider()
 
@@ -68,12 +66,12 @@ async function getInfo(contractAddress: string) {
 }
 
 function addToken() {
-    contractStore.add({
+    chainStore.addToken({
         address: address.value,
         name: name.value,
         symbol: symbol.value,
         decimals: decimals.value,
-        chainId: walletStore.activeNetwork
+        chainId: chainStore.activeChainId
     })
     emit('import')
 }

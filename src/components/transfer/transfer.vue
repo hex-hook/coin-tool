@@ -1,21 +1,18 @@
 <script setup lang="ts">
-import { ref, watch, h, computed } from 'vue';
+import { ref, watch, h } from 'vue';
 import { NCard, NSpace, NSwitch, NButton, NInputNumber, useMessage, useDialog, NSelect } from 'naive-ui'
 import { useKeyStore } from '@/stores/key';
 import AccountSelector from '@/components/ui/account-selector.vue'
 import OrderConfirm from '@/components/ui/order-confirm.vue'
-import { useWalletStore } from '@/stores/wallet';
-import { useContractStore } from '@/stores/contract';
 import { useERC20ByWallet, useProvider } from '@/hooks/provider';
 import { ethers, TransactionRequest, Wallet } from 'ethers';
+import { useTokenOptions } from '@/hooks/chain';
 // wallet transfer to wallet by web3js
 // - input wallet address
 // - input token count
 // - input target wallet address
 // - send
 const keyStore = useKeyStore()
-const walletStore = useWalletStore()
-const contractStore = useContractStore()
 const message = useMessage()
 const dialog = useDialog()
 const provider = useProvider()
@@ -28,22 +25,7 @@ const isOneToMore = ref(true)
 const selectedSourceWallet = ref<string | string[]>('')
 const selectedTargetWallet = ref<string | string[]>([])
 const tokenAddress = ref('0x')
-const tokenOptions = computed(() => {
-    const chainId = walletStore.activeNetwork
-    const network = walletStore.networks.find(item => item.chainId == chainId)
-    const nativeCurrency = network?.nativeCurrency || 'Unknow'
-    const contracts = contractStore.tokens.filter(item => item.chainId == chainId)
-    return [
-        {
-            label: nativeCurrency,
-            value: '0x'
-        },
-        ...contracts.map(item => ({
-            label: item.symbol,
-            value: item.address
-        }))
-    ]
-})
+const tokenOptions = useTokenOptions()
 
 
 // send token

@@ -1,16 +1,14 @@
 <script setup lang="ts">
 import { NCard, NSelect, NSpace, NButton } from 'naive-ui'
-
-import { useWalletStore } from '@/stores/wallet';
-import { useContractStore } from '@/stores/contract';
+import { useChainStore } from '@/stores/chain';
 import { computed, ref } from 'vue';
 import ContractCall from '@/components/abi/caller.vue'
+import { useContractOptions } from '@/hooks/chain';
 
-const walletStore = useWalletStore();
-const contractStore = useContractStore();
+const chainStore = useChainStore();
 
 const networkOptions = computed(() => {
-    return walletStore.networks.map((network) => {
+    return chainStore.networks.map((network) => {
         return {
             label: network.name,
             value: network.chainId
@@ -20,19 +18,12 @@ const networkOptions = computed(() => {
 
 const selectedNetwork = ref('')
 
-const contractOptions = computed(() => {
-    return contractStore.contracts.filter(item => item.chainId == selectedNetwork.value).map((contract) => {
-        return {
-            label: contract.description,
-            value: contract.address
-        }
-    })
-})
+const contractOptions = useContractOptions()
 
 const selectedContract = ref('')
 
 const abiFunctionOptions = computed(() => {
-    return contractStore.contracts.find(item => item.chainId == selectedNetwork.value && item.address == selectedContract.value)?.abi.map((fc) => {
+    return chainStore.contracts.find(item => item.chainId == selectedNetwork.value && item.address == selectedContract.value)?.abi.map((fc) => {
         return {
             label: fc.name,
             value: fc.name
@@ -42,7 +33,7 @@ const abiFunctionOptions = computed(() => {
 
 const selectedFunction = ref('')
 const abiFunction = computed(() => {
-    return contractStore.contracts.find(item => item.chainId == selectedNetwork.value && item.address == selectedContract.value)?.abi.find(item => item.name == selectedFunction.value)
+    return chainStore.contracts.find(item => item.chainId == selectedNetwork.value && item.address == selectedContract.value)?.abi.find(item => item.name == selectedFunction.value)
 })
 
 const invokeParams = ref<any[]>([])

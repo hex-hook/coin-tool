@@ -1,13 +1,13 @@
 import { computed } from "vue";
-import { useWalletStore } from "@/stores/wallet";
 import { ethers, type JsonRpcProvider, type Wallet } from "ethers";
 import { abiERC20 } from "@/assets/abis/ERC20";
+import { useChainStore } from "@/stores/chain";
 
 // 通过存储的 network 获取当前网络的 provider
 export function useProvider() {
-    const walletStore = useWalletStore();
+    const chainState = useChainStore();
     return computed(() => {
-        const network = walletStore.networks.find(item => item.chainId == walletStore.activeNetwork);
+        const network = chainState.networks.find(item => item.chainId == chainState.activeChainId);
         return new ethers.JsonRpcProvider(network?.rpcUrl);
     });
 }

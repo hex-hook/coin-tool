@@ -2,15 +2,14 @@
 import { NModal, NTable, NCard, NSpace, NButton, useDialog } from 'naive-ui'
 import { ref } from 'vue';
 import ImportToken from './import-token.vue'
-import { useContractStore } from '@/stores/contract'
-import { useWalletStore } from '@/stores/wallet';
+import { useChainStore } from '@/stores/chain'
+import { useTokens } from '@/hooks/chain'
 
 const dialog = useDialog()
 
-const tokenStore = useContractStore()
-const walletStore = useWalletStore()
+const chainStore = useChainStore()
 
-const tokenList = tokenStore.tokens
+const tokenList = useTokens()
 const showModal = ref(false)
 
 function handleDelete(address: string, name: string) {
@@ -20,7 +19,7 @@ function handleDelete(address: string, name: string) {
         negativeText: '取消',
         positiveText: '确定',
         onPositiveClick: () => {
-            tokenStore.remove(address, walletStore.activeNetwork)
+            chainStore.remove(address, chainStore.activeChainId)
         },
     })
   
