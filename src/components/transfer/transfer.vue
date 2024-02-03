@@ -7,7 +7,7 @@ import OrderConfirm from '@/components/ui/order-confirm.vue'
 import { useERC20ByWallet, useProvider } from '@/hooks/provider';
 import { ethers, TransactionRequest, Wallet } from 'ethers';
 import { useTokenOptions } from '@/hooks/chain';
-// wallet transfer to wallet by web3js
+// wallet transfer to wallet by web3
 // - input wallet address
 // - input token count
 // - input target wallet address
