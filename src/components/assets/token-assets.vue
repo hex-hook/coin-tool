@@ -68,8 +68,8 @@ function initData() {
     const groupId = props.groupId
     // start with 0-HD- is hd wallet
     if (groupId.startsWith('0-HD-')) {
-        const name = groupId.split('-')[2]
-        addressList.value = keyStore.hdWallet.find(item => item.name == name)?.accounts || []
+        const address = groupId.split('-')[2]
+        addressList.value = keyStore.hdAccounts.find(item => item.includes(address)) || []
     } else {
         addressList.value = walletStore.wallets.filter(item => item.group == parseInt(props.groupId)).map(item => item.address)
     }
@@ -79,7 +79,7 @@ function initData() {
     if (props.token.address == '0') {
         initBalance()
     } else {
-        contract = useERC20ByProvider(props.token.address, props.token.abi)
+        contract = useERC20ByProvider(props.token.address, provider.value)
         initTokenBalance()
     }
 }

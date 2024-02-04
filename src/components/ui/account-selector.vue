@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // a tree select component with wallet account
 // - select wallet or group
-// suport select one or more
+// support select one or more
 
 import { NTreeSelect,  } from 'naive-ui'
 import { useKeyStore } from '@/stores/key'

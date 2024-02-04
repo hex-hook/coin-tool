@@ -31,8 +31,10 @@ function createWallet() {
     }
 
     try {
-        const res = keyStore.createHDWallet(name.value, count.value)
-        mnemonic.value = res
+        const res = keyStore.createHDWallet(count.value)
+        const [ words, address ] = res
+        mnemonic.value = words
+        console.log('createWallet', res)
     } catch (error: any) {
         message.error(error.message)
         return

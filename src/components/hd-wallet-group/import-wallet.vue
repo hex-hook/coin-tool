@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // import hd wallet by mnemonic
 // - input wallet name and mnemonic
-// default inport 10 accounts, can change it
+// default import 10 accounts, can change it
 import { useMessage, NInput, NCard, NSpace, NButton, NInputNumber } from 'naive-ui'
 import { ref } from 'vue';
 import { useKeyStore } from '@/stores/key';
@@ -33,7 +33,7 @@ function importWallet() {
         message.warning('name is empty')
         return
     }
-    if (keyStore.hdWallet.find(item => item.name == name.value)) {
+    if (keyStore.hdAccounts.find(item => item.includes(name.value))) {
         message.warning('name is already exist')
         return
     }
@@ -42,7 +42,7 @@ function importWallet() {
         return
     }
     try {
-        keyStore.createHDWallet(name.value, count.value, mnemonic.value)
+        keyStore.createHDWallet(count.value, mnemonic.value)
     } catch (error: any) {
         message.error(error.message)
         return

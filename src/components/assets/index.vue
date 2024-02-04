@@ -4,9 +4,7 @@ import { NCard, NSelect, NSpace, NCheckbox, NCheckboxGroup } from 'naive-ui'
 import { useChainStore } from '@/stores/chain';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useWalletStore } from '@/stores/wallet';
-import { useKeyStore } from '@/stores/key';
 
-const keyStore = useKeyStore()
 const walletStore = useWalletStore()
 const chainStore = useChainStore()
 
@@ -32,8 +30,8 @@ const nativeCurrency = computed(() => {
 
 const activeChainId = computed(() => chainStore.activeChainId)
 const groupOptions = computed(() => [
-    {type: 'group', label: 'HD Wallet', children: keyStore.hdWallet.map(item => ({ label: item.name, value: `0-HD-${item.name}` }))},
-    {type: 'group', label: 'Simple Wallet', children: walletStore.groups.map(item => ({ label: item.name, value: `${item.id}` }))}
+    {type: 'group', label: 'HD Wallet', children: walletStore.groups.filter(item => item.address).map(item => ({ label: item.name, value: `HD-0-${item.address}`}))},
+    {type: 'group', label: 'Simple Wallet', children: walletStore.groups.filter(item => !item.address).map(item => ({ label: item.name, value: `${item.id}` }))}
 ])
 const tokenOptions = computed(() => chainStore.tokens.filter(item => item.chainId == chainStore.activeChainId))
 const selectedTokens = ref<string[]>([])
@@ -103,8 +101,10 @@ watch(tokenOptions, () => {
             </n-checkbox-group>
 
         </n-card>
+        <template v-if="selectedGroup">
 
-        <TokenAssets v-if="nativeCurrency && selectedGroup" :token="nativeCurrency" :group-id="selectedGroup" />
-        <TokenAssets v-if="selectedGroup" v-for="item of contractAddressList" :token="item" :group-id="selectedGroup" />
+            <TokenAssets v-if="nativeCurrency" :token="nativeCurrency" :group-id="selectedGroup" />
+            <TokenAssets v-for="item of contractAddressList" :token="item" :group-id="selectedGroup" />
+        </template>
     </n-space>
 </template>

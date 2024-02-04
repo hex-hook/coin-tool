@@ -13,7 +13,10 @@ const chainStore = useChainStore();
 
 
 
-const walletSelectOptions = computed(() => keyStore.hdWallet.map(item => ({ label: item.name, value: item.first })))
+const walletSelectOptions = computed(() => walletStore.groups
+    .filter(item => item.address)
+    .map(item => ({ label: item.name, value: item.address }))
+)
 
 const count = ref(1)
 
@@ -34,7 +37,7 @@ onMounted(() => {
 
 function updateWallet() {
     accounts.value = []
-    const newAccounts = keyStore.hdWallet.find(item => item.first == selectedWallet.value)?.accounts
+    const newAccounts = keyStore.hdAccounts.find(item => item.includes(selectedWallet.value))
     if (newAccounts) {
         accounts.value = newAccounts
         initAddressInfoList()
@@ -82,7 +85,6 @@ function saveName() {
         name: editName.value,
         group: 0,
         createdAt: Date.now(),
-        hasPrivateKey: true,
     }
     chainStore.updateToken(item);
     const index = addressInfoList.value.findIndex(item => item.address == editNameAddress.value)

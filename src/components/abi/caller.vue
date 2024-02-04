@@ -3,7 +3,6 @@ import { NSpace, NCard, NInput, NButton, NSwitch, NTag, NTable, useMessage, NInp
 import { onMounted, ref, h, watch } from 'vue';
 import AccountSelector from '@/components/ui/account-selector.vue'
 import { useKeyStore } from '@/stores/key';
-import { useWalletStore } from '@/stores/wallet';
 import ContractConfirm from '@/components/contract/confirm.vue'
 import { ChevronDownCircleOutline, ChevronUpCircleOutline } from '@vicons/ionicons5'
 import { JsonFragment, TransactionLike, ethers } from 'ethers'

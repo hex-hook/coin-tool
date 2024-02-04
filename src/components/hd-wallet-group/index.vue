@@ -13,12 +13,14 @@ import { computed, ref } from 'vue';
 import { Pencil, CheckmarkCircle } from '@vicons/ionicons5';
 import ImportWallet from './import-wallet.vue'
 import CreateWallet from './create-wallet.vue'
+import { useWalletStore } from '@/stores/wallet';
 
 const keyStore = useKeyStore()
+const walletStore = useWalletStore()
 const message = useMessage()
 const dialog = useDialog()
 
-const wallets = computed(() => keyStore.hdWallet)
+const wallets = computed(() => walletStore.groups.filter(item => item.address))
 
 const showCreateModal = ref(false)
 const showImportModal = ref(false)
@@ -37,7 +39,7 @@ async function deleteHandle(index: number) {
         negativeText: 'Cancel',
         positiveText: 'Confirm',
         onPositiveClick: () => {
-            keyStore.removeHDWallet(wallets.value[index].first)
+            keyStore.removeHDWallet(wallets.value[index].address as string)
         }
     })
 }

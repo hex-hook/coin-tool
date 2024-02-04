@@ -20,7 +20,7 @@ function loadStore(): ChainState {
         tokens: [],
         contracts: [],
         transactions: [],
-        networks: [],
+        networks: DEFAULT_NETWORKS,
         activeChainId: DEFAULT_NETWORKS[0].chainId
     }
 }
