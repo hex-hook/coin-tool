@@ -22,7 +22,7 @@ const newName = ref<string>('')
 const showModal = ref(false)
 const showImportModal = ref(false)
 
-const groupList = computed(() => walletStore.groups.filter(o => o.id != 0).map(item => ({ label: item.name, value: item.id })))
+const groupList = computed(() => walletStore.groups.filter(o => !o.address).map(item => ({ label: item.name, value: item.id })))
 const keyList = computed(() => keyStore.simpleAccounts)
 
 const selectedGroup = ref(walletStore.groups[0].id)

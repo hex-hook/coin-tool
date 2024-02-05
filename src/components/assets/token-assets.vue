@@ -39,8 +39,8 @@ const addressInfoList = ref<Wallet.Address[]>([])
 async function initTokenBalance() {
     for (const address of addressList.value) {
         const count = await contract.balanceOf(address)
-        const value = ethers.formatEther(count)
-        console.log('count:', address, value)
+        const value = ethers.formatUnits(count, props.token.decimals)
+        
         data.value.push({
             address,
             count: value,
@@ -53,7 +53,7 @@ async function initBalance() {
     for (const address of addressList.value) {
         const count = await provider.value.getBalance(address)
 
-        const value = ethers.formatEther(count)
+        const value = ethers.formatUnits(count, props.token.decimals)
         data.value.push({
             address,
             count: value,
@@ -66,6 +66,7 @@ async function initBalance() {
 
 function initData() {
     const groupId = props.groupId
+    totalCount.value = BigInt(0)
     // start with 0-HD- is hd wallet
     if (groupId.startsWith('0-HD-')) {
         const address = groupId.split('-')[2]
@@ -110,7 +111,7 @@ watch(props, () => {
         <template #header>
             <n-space>
                 <div style="font-size: large;">{{ props.token.symbol }}</div>
-                <div>{{ totalCount }}</div>
+                <div>{{ ethers.formatUnits(totalCount, props.token.decimals) }}</div>
                 <div>$0</div>
             </n-space>
         </template>
@@ -124,7 +125,7 @@ watch(props, () => {
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="item of data">
+                <tr v-for="item of data" v-bind:key="item.address">
                     <td>{{ getNameByAddress(item.address) }}</td>
                     <td>{{ item.address }}</td>
                     <td>{{ item.count }}</td>

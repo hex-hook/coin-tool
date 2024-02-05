@@ -30,7 +30,7 @@ const nativeCurrency = computed(() => {
 
 const activeChainId = computed(() => chainStore.activeChainId)
 const groupOptions = computed(() => [
-    {type: 'group', label: 'HD Wallet', children: walletStore.groups.filter(item => item.address).map(item => ({ label: item.name, value: `HD-0-${item.address}`}))},
+    {type: 'group', label: 'HD Wallet', children: walletStore.groups.filter(item => item.address).map(item => ({ label: item.name, value: `0-HD-${item.address}`}))},
     {type: 'group', label: 'Simple Wallet', children: walletStore.groups.filter(item => !item.address).map(item => ({ label: item.name, value: `${item.id}` }))}
 ])
 const tokenOptions = computed(() => chainStore.tokens.filter(item => item.chainId == chainStore.activeChainId))
@@ -97,14 +97,14 @@ watch(tokenOptions, () => {
                 <n-select :options="groupOptions" v-model:value="selectedGroup" :style="{ width: '300px' }" />
             </n-space>
             <n-checkbox-group v-model:value="selectedTokens">
-                <n-checkbox v-for="item of tokenOptions" :value="item.address" :label="item.symbol" />
+                <n-checkbox v-for="item of tokenOptions" :value="item.address" :label="item.symbol" v-bind:key="item.address" />
             </n-checkbox-group>
 
         </n-card>
         <template v-if="selectedGroup">
 
             <TokenAssets v-if="nativeCurrency" :token="nativeCurrency" :group-id="selectedGroup" />
-            <TokenAssets v-for="item of contractAddressList" :token="item" :group-id="selectedGroup" />
+            <TokenAssets v-for="item of contractAddressList" :token="item" :group-id="selectedGroup" v-bind:key="item.address" />
         </template>
     </n-space>
 </template>

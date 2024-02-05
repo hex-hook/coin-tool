@@ -48,10 +48,10 @@ const accountsOptions = computed(() => {
     const hdWallet = {
         label: 'HD Wallet',
         key: 'hd-wallet',
-        children: keyStore.hdWallet.map(item => ({
+        children: walletStore.groups.filter(item => item.address).map(item => ({
             label: item.name,
-            key: item.name,
-            children: item.accounts.map(account => ({
+            key: item.address,
+            children: keyStore.hdAccounts.find(wallet => wallet.includes(item.address as string))?.map(account => ({
                 label: `${hdAccountNameDict[account]??''}(${account})`,
                 key: account
             }))

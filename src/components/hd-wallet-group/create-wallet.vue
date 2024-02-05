@@ -5,6 +5,7 @@
 
 import { useMessage, NInput, NCard, NSpace, NButton, NInputNumber } from 'naive-ui'
 import { useKeyStore } from '@/stores/key';
+import { useWalletStore } from '@/stores/wallet';
 import { ref } from 'vue';
 
 interface Emits {
@@ -14,6 +15,7 @@ interface Emits {
 const message = useMessage()
 const emit = defineEmits<Emits>()
 const keyStore = useKeyStore()
+const walletStore = useWalletStore()
 
 const name = ref('')
 const count = ref(10)
@@ -34,7 +36,15 @@ function createWallet() {
         const res = keyStore.createHDWallet(count.value)
         const [ words, address ] = res
         mnemonic.value = words
-        console.log('createWallet', res)
+        const lastId = walletStore.groups.map(item => item.id).sort((a, b) => b - a)[0]
+        console.log(lastId, name.value, address, words)
+        walletStore.addGroup({
+            id: lastId+1,
+            name: name.value,
+            address,
+            description: ''
+        })
+        
     } catch (error: any) {
         message.error(error.message)
         return

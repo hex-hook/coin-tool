@@ -44,21 +44,18 @@ async function deleteHandle(index: number) {
     })
 }
 
-function updateName() {
-    const index = editIndex.value
-    if (index < 0) {
-        return
-    }
+function updateName(item: Wallet.Group) {
     if (!newName.value) {
         message.warning('name is empty')
         return
     }
-    const existIndex = wallets.value.findIndex(item => item.name == newName.value)
+    const existIndex = wallets.value.findIndex(o => o.name == newName.value)
     if (existIndex >= 0) {
         message.warning('name is already exist')
         return
     }
-    // keyStore.updateHDWalletName(index, newName.value)
+    item.name = newName.value
+    walletStore.updateGroup(item)
     editIndex.value = -1
     newName.value = ''
 }
@@ -84,12 +81,12 @@ function updateName() {
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <th>Accounts</th>
+                        <th>Description</th>
                         <th>Options</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="(item, index) of wallets" >
+                    <tr v-for="(item, index) of wallets" v-bind:key="item.id">
                         <td>                            
                             <n-space v-if="editIndex != index" align="center">
                                 <div>{{ item.name }}</div>
@@ -99,12 +96,12 @@ function updateName() {
                             </n-space>
                             <n-space v-else align="center">
                                 <n-input v-model:value="newName" />
-                                <n-button text style="font-size:24px" @click="updateName()">
+                                <n-button text style="font-size:24px" @click="updateName(item)">
                                     <n-icon><CheckmarkCircle/></n-icon>
                                 </n-button>
                             </n-space>
                         </td>
-                        <td>{{ item.accounts.length }}</td>
+                        <td></td>
                         <td>
                             <n-space>
                                 <n-button type="error" @click="deleteHandle(index)" round>Delete</n-button>

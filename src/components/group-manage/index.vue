@@ -10,7 +10,7 @@ const message = useMessage()
 
 const modalState = ref(false)
 
-const groups = computed(() => walletStore.groups)
+const groups = computed(() => walletStore.groups.filter(item => !item.address))
 
 const editId = ref(0)
 

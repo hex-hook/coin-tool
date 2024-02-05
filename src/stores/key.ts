@@ -14,7 +14,7 @@ interface KeyStore {
 // 基于 password 生成的 key，用于作为真实的钱包存储密码
 // const DEFAULT_PBKDF2_ITERATIONS = 100000;
 
-const _key = 'key_v0'
+const _key = 'key_v2'
 
 function isCreatedKeyring() {
     return localStorage.getItem(_key) != null
@@ -74,16 +74,15 @@ export const useKeyStore = defineStore('keystore', {
         },
         initWallet(password: string) {
             this.key = password
-            this.isCreated = true
             
             return this.createHDWallet()
         },
         refreshState(jsonData: string) {
             const wallet = ethers.Wallet.fromEncryptedJsonSync(jsonData, this.key)
             if (wallet instanceof ethers.HDNodeWallet) {
-                const accounts: string[] = []
                 const root = ethers.HDNodeWallet.fromPhrase(wallet.mnemonic?.phrase as string)
-                for (let i = 0; i < wallet.index; i++) {
+                const accounts: string[] = [root.address]
+                for (let i = 1; i < wallet.index; i++) {
                     accounts.push(root.deriveChild(i).address)
                 }
                 this.hdAccounts.push(accounts)
@@ -104,11 +103,11 @@ export const useKeyStore = defineStore('keystore', {
                 }
             } catch (e) {
                 console.error(e)
-                return false
+                this.key = ''
+                throw e;
             }
-
             this.isLock = false
-            return true
+            
         },
         exportPrivate(address: string) {
             if (this.simpleAccounts.includes(address)) {
@@ -207,5 +206,9 @@ export const useKeyStore = defineStore('keystore', {
             this.key = ''
             this.isLock = true
         },
+        confirmCreate() {
+            this.isCreated = true
+            this.isLock = false
+        }
     }
 })

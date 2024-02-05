@@ -30,7 +30,7 @@ const editName = ref('')
 
 onMounted(() => {
     if (walletSelectOptions.value.length > 0) {
-        selectedWallet.value = walletSelectOptions.value[0].value
+        selectedWallet.value = walletSelectOptions.value[0].value as string
         updateWallet()
     }
 })
@@ -85,8 +85,9 @@ function saveName() {
         name: editName.value,
         group: 0,
         createdAt: Date.now(),
+        hasPrivateKey: true,
     }
-    chainStore.updateToken(item);
+    walletStore.update(item)
     const index = addressInfoList.value.findIndex(item => item.address == editNameAddress.value)
 
     if (index < 0) {
