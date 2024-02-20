@@ -65,7 +65,7 @@ function deleteHandle(name: string, address: string) {
                     wallets.value.splice(index, 1)
                 }
             }
-            keyStore.removeSimplePrivateKey(address)
+            removeKey(address)
         },
 
     })
@@ -122,7 +122,7 @@ function importHandle(address: string) {
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="item of wallets">
+                    <tr v-for="item of wallets" :key="item.address">
                         <td>
                             <n-space v-if="editAddress != item.address">
                                 <div>{{ item.name }}</div>

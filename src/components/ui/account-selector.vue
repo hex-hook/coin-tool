@@ -31,10 +31,10 @@ const accountsOptions = computed(() => {
     const simpleWallet = {
         label: 'Simple Wallet',
         key: 'simple-wallet',
-        children: walletStore.groups.map(item => ({
+        children: walletStore.groups.filter(item => !item.address).map(item => ({
             label: item.name,
-            key: item.name,
-            children: walletStore.wallets.filter(o => o.group != 0).map(account => ({
+            key: item.id,
+            children: walletStore.wallets.filter(o => o.group == item.id).map(account => ({
                 label: `${account.name}(${account.address})`,
                 key: account.address,
                 disabled: props.filterPrivate && !keyStore.simpleAccounts.includes(account.address)

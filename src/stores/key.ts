@@ -186,7 +186,8 @@ export const useKeyStore = defineStore('keystore', {
             const wallets = loadEncryptedWallets();
             const wallet = wallets[address]
             if (!wallet) {
-                throw new Error(`not found HD wallet: ${address}`);
+                // throw new Error(`not found simple wallet: ${address}`);
+                return
             }
             delete wallets[address]
             this.simpleAccounts.splice(this.simpleAccounts.indexOf(address), 1)

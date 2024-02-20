@@ -45,9 +45,6 @@ function checkAddress(): boolean {
 // 1. if props.address is exist, then return
 // 2. if props.address is not exist, then add new record, get group by selectedGroup
 function updateWallet(address: string, name: string|undefined) {
-    if (props.address) {
-        return
-    }
     const index = walletStore.wallets.findIndex(item => item.address == address)
     const item = {
             name: name || `account-${walletStore.wallets.length + 1}`,
