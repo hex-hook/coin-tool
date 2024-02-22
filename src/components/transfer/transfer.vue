@@ -232,7 +232,7 @@ function updateTargetWallet(address: string | string[]) {
                         <n-button round type="primary" @click="sendAll">Send</n-button>
                     </n-space>
                 </n-space>
-                <AccountSelector :multiple="isOneToMore" :filter-private="!isOneToMore" @update-value="updateTargetWallet"/>
+                <AccountSelector :multiple="isOneToMore" :filter-private="!isOneToMore" @update-value="updateTargetWallet" :filter-address="selectedSourceWallet"/>
             </n-space>
         </n-space>
     </n-card>

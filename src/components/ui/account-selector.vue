@@ -12,6 +12,7 @@ import type { TreeSelectOption } from 'naive-ui'
 interface Props {
     multiple: boolean
     filterPrivate: boolean
+    filterAddress?: string | string[]
 }
 
 interface Emits {
@@ -28,6 +29,7 @@ const selectedWallets = ref<string| string[]>(props.multiple ? [] : '')
 
 
 const accountsOptions = computed(() => {
+    const filterAddress = props.filterAddress || []
     const simpleWallet = {
         label: 'Simple Wallet',
         key: 'simple-wallet',
@@ -37,7 +39,7 @@ const accountsOptions = computed(() => {
             children: walletStore.wallets.filter(o => o.group == item.id).map(account => ({
                 label: `${account.name}(${account.address})`,
                 key: account.address,
-                disabled: props.filterPrivate && !keyStore.simpleAccounts.includes(account.address)
+                disabled: (props.filterPrivate && !keyStore.simpleAccounts.includes(account.address)) || filterAddress.includes(account.address)
             }))
         }))
     }
@@ -57,6 +59,7 @@ const accountsOptions = computed(() => {
             children: keyStore.hdAccounts.find(wallets => wallets.includes(item.address as string))?.map(account => ({
                 label: `${hdAccountNameDict[account]??''}(${account})`,
                 key: account,
+                disabled: filterAddress.includes(account)
             })) || []
         }))
     }
