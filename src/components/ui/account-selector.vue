@@ -45,16 +45,19 @@ const accountsOptions = computed(() => {
         pre[cur.address] = cur.name
         return pre
     }, {} as Record<string, string>)
+    if (keyStore.hdAccounts.length == 0) {
+        return [simpleWallet] as TreeSelectOption[]
+    }
     const hdWallet = {
         label: 'HD Wallet',
         key: 'hd-wallet',
         children: walletStore.groups.filter(item => item.address).map(item => ({
             label: item.name,
-            key: item.address,
-            children: keyStore.hdAccounts.find(wallet => wallet.includes(item.address as string))?.map(account => ({
+            key: 'group-' + item.address,
+            children: keyStore.hdAccounts.find(wallets => wallets.includes(item.address as string))?.map(account => ({
                 label: `${hdAccountNameDict[account]??''}(${account})`,
-                key: account
-            }))
+                key: account,
+            })) || []
         }))
     }
     return [ hdWallet, simpleWallet] as TreeSelectOption[]
