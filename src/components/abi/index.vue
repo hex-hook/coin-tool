@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { NAnchor, NAnchorLink, NSpace, NInput, NButton, NCard, useMessage, NLayout, NLayoutContent, NLayoutHeader, NLayoutSider } from 'naive-ui'
+import { NAnchor, NAnchorLink, NSpace, NInput, NButton, NCard, useMessage, NLayout, NLayoutContent, NLayoutHeader, NLayoutSider, NSwitch, NIcon } from 'naive-ui'
 import { ref } from 'vue';
 import Caller from './caller.vue'
 import { useChainStore } from '@/stores/chain';
-import type { JsonFragment } from 'ethers'
+import { JsonFragment, ethers, FunctionFragment } from 'ethers'
+import { AddCircle } from '@vicons/ionicons5'
 
 const message = useMessage()
 const chainStore = useChainStore()
 
-
+const isHumanReadableABI = ref(true)
+const humanABI = ref('')
 const abiText = ref('')
-const contractAbi = ref<JsonFragment[]>([])
+const contractAbi = ref<JsonFragment[] | FunctionFragment[]>([])
 
 const contractAddress = ref<string>('')
 const description = ref('')
@@ -49,6 +51,27 @@ function saveContract() {
     })
 }
 
+function addFunction() {
+    if (humanABI.value.length == 0) {
+        message.error('function is empty')
+        return
+    }
+    try {
+        const fragments = new ethers.Interface([humanABI.value]).fragments
+        if (fragments.length == 0) {
+            message.error('function is empty')
+            return
+        }
+        const abiFunction = fragments[0] as FunctionFragment
+        contractAbi.value.push(abiFunction)
+        humanABI.value = ''
+    } catch (e: any) {
+        console.log(e)
+        message.error(e.message)
+    }
+
+}
+
 </script>
 
 
@@ -56,7 +79,7 @@ function saveContract() {
     <n-layout has-sider>
         <n-layout-sider>
             <n-anchor v-if="contractAbi.length > 0" type="block" style="z-index: 1; border:1px solid var(--n-border-color); border-radius: 3px; padding:10px;max-width: 250px;" :top="250" affix>
-                <n-anchor-link v-for="fc of contractAbi" :title="fc.name" :href="`#contract-function-${fc.name}`" />
+                <n-anchor-link v-for="fc of contractAbi" :title="fc.name" :href="`#contract-function-${fc.name}`" :key="'abi-'+fc.name"/>
             </n-anchor>
         </n-layout-sider>
         <n-layout>
@@ -71,7 +94,19 @@ function saveContract() {
                             <div style="width: 150px;">Description</div>
                             <n-input v-model:value="description" :style="{ width: '500px' }"/>
                         </n-space>
-                        <n-input type="textarea" placeholder="contract abi (json)" v-model:value="abiText"
+                        <n-space>
+                            <n-switch v-model:value="isHumanReadableABI"/>
+                            <div>Human-Readable ABI</div>
+                        </n-space>
+                        <n-space vertical v-if="isHumanReadableABI">
+                            <n-space align="center">
+                                <n-input placeholder="function transferFrom(address,address,uint256)" v-model:value="humanABI" style="width:400px"/>
+                                <n-button type="info" text @click="addFunction">
+                                    <n-icon><AddCircle /></n-icon>
+                                </n-button>
+                            </n-space>
+                        </n-space>
+                        <n-input v-else type="textarea" placeholder="contract abi (json)" v-model:value="abiText"
                             :autosize="{ minRows: 5, maxRows: 10 }" />
                         <n-space justify="center">
                             <n-button @click="resolveAbi" type="info" round>Resolve</n-button>
@@ -82,7 +117,7 @@ function saveContract() {
             </n-layout-header>
             <n-layout-content>
                
-                    <caller v-for="fc of contractAbi" :data="fc" :address="contractAddress" :id="`contract-function-${fc.name}`"  />
+                    <caller v-for="fc of contractAbi" :data="fc" :address="contractAddress" :id="`contract-function-${fc.name}`" :key="'abi-caller-' + fc.name" />
             </n-layout-content>
         </n-layout>
     </n-layout>

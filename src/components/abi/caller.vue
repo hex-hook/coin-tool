@@ -5,12 +5,12 @@ import AccountSelector from '@/components/ui/account-selector.vue'
 import { useKeyStore } from '@/stores/key';
 import ContractConfirm from '@/components/contract/confirm.vue'
 import { ChevronDownCircleOutline, ChevronUpCircleOutline } from '@vicons/ionicons5'
-import { JsonFragment, TransactionLike, ethers } from 'ethers'
+import { JsonFragment, TransactionLike, ethers, FunctionFragment } from 'ethers'
 import { useProvider } from '@/hooks/provider';
 import { useChainStore } from '@/stores/chain';
 
 interface Props {
-    data: JsonFragment
+    data: JsonFragment | FunctionFragment
     address: string
 }
 
@@ -93,7 +93,7 @@ async function sendContract() {
         positiveText: '确定',
         onPositiveClick: async () => {
             const priKey = keyStore.exportPrivate(selectedAddress.value)
-            const wallet = new ethers.Wallet('0x' + priKey, useProvider().value)
+            const wallet = new ethers.Wallet(priKey, useProvider().value)
             const contract = new ethers.Contract(props.address, [props.data], wallet)
             const args = values.value
             if (props.data.inputs) {
@@ -196,7 +196,7 @@ watch(payValue, () => {
 
                     </thead>
                     <tbody>
-                        <tr v-for="(param, index) of props.data.inputs">
+                        <tr v-for="(param, index) of props.data.inputs" :key="'input-' + index">
                             <td>{{ param.name }}</td>
                             <td>{{ param.type }}</td>
                             <td>
