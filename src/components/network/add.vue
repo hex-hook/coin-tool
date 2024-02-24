@@ -76,11 +76,6 @@ function checkData(): boolean {
         message.error('nativeCurrency is null')
         return false
     }
-    const index = chainStore.networks.findIndex(item => item.chainId == convert16(chainId.value))
-    if (index >= 0) {
-        message.error('Chain is already exist')
-        return false
-    }
     return true
 }
 
