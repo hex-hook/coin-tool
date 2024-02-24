@@ -29,7 +29,7 @@ function saveStore(data: ChainState) {
     localStorage.setItem(_key, JSON.stringify(data))
 }
 
-export const useChainStore = defineStore('contracts', {
+export const useChainStore = defineStore('chains', {
     state: (): ChainState => {
         return loadStore()
     },
