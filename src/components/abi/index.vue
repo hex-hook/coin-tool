@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { NAnchor, NAnchorLink, NSpace, NInput, NButton, NCard, useMessage, NLayout, NLayoutContent, NLayoutHeader, NLayoutSider, NSwitch, NIcon } from 'naive-ui'
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import Caller from './caller.vue'
 import { useChainStore } from '@/stores/chain';
 import { JsonFragment, ethers, FunctionFragment } from 'ethers'
 import { AddCircle } from '@vicons/ionicons5'
+import { useProvider } from '@/hooks/provider';
+
 
 const message = useMessage()
 const chainStore = useChainStore()
@@ -17,6 +19,16 @@ const contractAbi = ref<JsonFragment[] | FunctionFragment[]>([])
 const contractAddress = ref<string>('')
 const description = ref('')
 
+watch(contractAddress, (v) => {
+    if (v.length == 0) {
+        return
+    }
+    useProvider().value.getCode(contractAddress.value).then((code) => {
+        if (code == '0x') {
+            message.error('address is not contract')
+        }
+    })
+})
 
 function resolveAbi() {
     contractAbi.value = []

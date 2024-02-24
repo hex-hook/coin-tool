@@ -106,19 +106,7 @@ async function sendContract() {
                 }
             }
             const res = await contract[`${props.data.name}`](...args)
-            await res.await()
-            // const item = {
-            //     chainId: network.chainId,
-            //     tx: hash,
-            //     symbol: network?.nativeCurrency || 'ETH',
-            //     from: tx.from,
-            //     to: tx.to,
-            //     createdAt: Date.now(),
-            //     count: `${tx.value || 0}`,
-            //     method: `contract:${props.data.name}`,
-            //     contractAddress: props.address
-            // }
-            // contractStore.addTransaction(item)
+            await res.wait()
         
         }
     })
