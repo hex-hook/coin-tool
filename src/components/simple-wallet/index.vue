@@ -22,7 +22,7 @@ const newName = ref<string>('')
 const showModal = ref(false)
 const showImportModal = ref(false)
 
-const groupList = computed(() => walletStore.groups.filter(o => o.id != 0).map(item => ({ label: item.name, value: item.id })))
+const groupList = computed(() => walletStore.groups.filter(o => !o.address).map(item => ({ label: item.name, value: item.id })))
 const keyList = computed(() => keyStore.simpleAccounts)
 
 const selectedGroup = ref(walletStore.groups[0].id)
@@ -65,7 +65,7 @@ function deleteHandle(name: string, address: string) {
                     wallets.value.splice(index, 1)
                 }
             }
-            keyStore.removeSimplePrivateKey(address)
+            removeKey(address)
         },
 
     })
@@ -122,7 +122,7 @@ function importHandle(address: string) {
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="item of wallets">
+                    <tr v-for="item of wallets" :key="item.address">
                         <td>
                             <n-space v-if="editAddress != item.address">
                                 <div>{{ item.name }}</div>

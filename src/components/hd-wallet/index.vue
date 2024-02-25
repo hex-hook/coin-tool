@@ -5,13 +5,18 @@ import { useKeyStore } from '@/stores/key';
 import { useWalletStore } from '@/stores/wallet';
 import { Close, Pencil, Save } from '@vicons/ionicons5';
 import { getAddress } from 'ethers';
+import { useChainStore } from '@/stores/chain';
 
-const keyStore = useKeyStore()
-const walletStore = useWalletStore()
+const keyStore = useKeyStore();
+const walletStore = useWalletStore();
+const chainStore = useChainStore();
 
 
 
-const walletSelectOptions = computed(() => keyStore.hdWallet.map(item => ({ label: item.name, value: item.first })))
+const walletSelectOptions = computed(() => walletStore.groups
+    .filter(item => item.address)
+    .map(item => ({ label: item.name, value: item.address }))
+)
 
 const count = ref(1)
 
@@ -25,14 +30,14 @@ const editName = ref('')
 
 onMounted(() => {
     if (walletSelectOptions.value.length > 0) {
-        selectedWallet.value = walletSelectOptions.value[0].value
+        selectedWallet.value = walletSelectOptions.value[0].value as string
         updateWallet()
     }
 })
 
 function updateWallet() {
     accounts.value = []
-    const newAccounts = keyStore.hdWallet.find(item => item.first == selectedWallet.value)?.accounts
+    const newAccounts = keyStore.hdAccounts.find(item => item.includes(selectedWallet.value))
     if (newAccounts) {
         accounts.value = newAccounts
         initAddressInfoList()
@@ -82,7 +87,7 @@ function saveName() {
         createdAt: Date.now(),
         hasPrivateKey: true,
     }
-    // walletStore.udpate(item)
+    walletStore.update(item)
     const index = addressInfoList.value.findIndex(item => item.address == editNameAddress.value)
 
     if (index < 0) {

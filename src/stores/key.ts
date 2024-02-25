@@ -1,22 +1,10 @@
 import { ethers, Wallet, HDNodeWallet } from "ethers";
 import { defineStore } from "pinia";
 
-interface HDWallet {
-    name: string
-    first: string
-    // ['0x...']
-    accounts: string[]
-}
-
-interface WalletInfo {
-    name?: string
-    jsonData: string
-}
-
 interface KeyStore {
     key: string
-    // 基于助记词的钱包
-    hdWallet: HDWallet[]
+    // hd 钱包地址组
+    hdAccounts: string[][]
     // 基于私钥的钱包
     simpleAccounts: string[]
     isLock: boolean
@@ -26,7 +14,7 @@ interface KeyStore {
 // 基于 password 生成的 key，用于作为真实的钱包存储密码
 // const DEFAULT_PBKDF2_ITERATIONS = 100000;
 
-const _key = 'key_v0'
+const _key = 'key_v2'
 
 function isCreatedKeyring() {
     return localStorage.getItem(_key) != null
@@ -35,26 +23,26 @@ function isCreatedKeyring() {
 
 /**
  * 从持久化存储中加载钱包信息
- * {'0x...': {name: 'wallet-0', jsonData: '...'}, '0x...': {jsonData: '...'}}
- * @returns Record<string, WalletInfo> key 为第一个地址，value 为钱包信息
+ * {'0x...': 'encrypt private key wallet json data', '0x1...': 'encrypt hd wallet json data'}
+ * @returns Record<string, string> key 为第一个地址，value 为钱包信息
  */
-function loadEncryptedWallets(): Record<string, WalletInfo> {
+function loadEncryptedWallets(): Record<string, string> {
     const dataString = localStorage.getItem(_key)
     if (dataString) {
-        return JSON.parse(dataString) as Record<string, WalletInfo>
+        return JSON.parse(dataString) as Record<string, string>
     }
     return {};
 }
 
 function loadEncryptedWalletByAddress(address: string, password: string): Wallet | HDNodeWallet {
-    const wallet = loadEncryptedWallets()[address]
-    if (!wallet) {
+    const jsonData = loadEncryptedWallets()[address]
+    if (!jsonData) {
         throw new Error(`not found wallet by address: ${address}`);
     }
-    return ethers.Wallet.fromEncryptedJsonSync(wallet.jsonData, password)
+    return ethers.Wallet.fromEncryptedJsonSync(jsonData, password)
 }
 
-function saveEncryptedWallets(data: Record<string, WalletInfo>) {
+function saveEncryptedWallets(data: Record<string, string>) {
     localStorage.setItem(_key, JSON.stringify(data));
 }
 
@@ -62,14 +50,14 @@ export const useKeyStore = defineStore('keystore', {
     state: (): KeyStore => {
         return {
             key: '',
-            hdWallet: [],
+            hdAccounts: [],
             simpleAccounts: [],
             isLock: true,
             isCreated: isCreatedKeyring()
         }
     },
     actions: {
-        createHDWallet(name: string, count = 10, mnemonic?: string) {
+        createHDWallet(count = 10, mnemonic?: string) {
             if (!mnemonic) {
                 mnemonic = ethers.Mnemonic.entropyToPhrase(ethers.randomBytes(32));
             }
@@ -80,25 +68,24 @@ export const useKeyStore = defineStore('keystore', {
                 addressList.push(hdWallet.deriveChild(i).address)
             }
             const encryptedJson = lastWallet.encryptSync(this.key);
-            saveEncryptedWallets({ ...loadEncryptedWallets(), [hdWallet.address]: { name, jsonData: encryptedJson } })
-            this.hdWallet.push({ name, accounts: addressList, first: hdWallet.address });
-            return mnemonic
+            saveEncryptedWallets({ ...loadEncryptedWallets(), [hdWallet.address]: encryptedJson })
+            this.hdAccounts.push(addressList)
+            return [mnemonic, hdWallet.address]
         },
         initWallet(password: string) {
             this.key = password
-            this.createHDWallet('wallet-0')
-            this.isCreated = true
-            this.isLock = false
+            
+            return this.createHDWallet()
         },
-        refreshState(item: WalletInfo) {
-            const wallet = ethers.Wallet.fromEncryptedJsonSync(item.jsonData, this.key)
+        refreshState(jsonData: string) {
+            const wallet = ethers.Wallet.fromEncryptedJsonSync(jsonData, this.key)
             if (wallet instanceof ethers.HDNodeWallet) {
-                const accounts: string[] = []
                 const root = ethers.HDNodeWallet.fromPhrase(wallet.mnemonic?.phrase as string)
-                for (let i = 0; i < wallet.index; i++) {
+                const accounts: string[] = [root.address]
+                for (let i = 1; i < wallet.index; i++) {
                     accounts.push(root.deriveChild(i).address)
                 }
-                this.hdWallet.push({ name: item.name || 'unset', accounts, first: accounts[0] })
+                this.hdAccounts.push(accounts)
             } else if (wallet instanceof ethers.Wallet) {
                 this.simpleAccounts.push(wallet.address)
             } else {
@@ -108,6 +95,7 @@ export const useKeyStore = defineStore('keystore', {
         },
         verify(password: string) {
             const wallets = loadEncryptedWallets();
+            this.key = password
 
             try {
                 for (const key in wallets) {
@@ -115,12 +103,11 @@ export const useKeyStore = defineStore('keystore', {
                 }
             } catch (e) {
                 console.error(e)
-                return false
+                this.key = ''
+                throw e;
             }
-
             this.isLock = false
-            this.key = password
-            return true
+            
         },
         exportPrivate(address: string) {
             if (this.simpleAccounts.includes(address)) {
@@ -133,13 +120,13 @@ export const useKeyStore = defineStore('keystore', {
             return loadEncryptedWalletByAddress(address, this.key).privateKey
         },
         exportHDPrivate(address: string) {
-            const firstWallet = this.hdWallet.find(item => item.accounts.includes(address))
-            if (!firstWallet) {
+            const accounts = this.hdAccounts.find(item => item.includes(address))
+            if (!accounts || accounts.length === 0) {
                 throw new Error(`not found wallet by ${address}`);
             }
-            const wallet = loadEncryptedWalletByAddress(firstWallet.first, this.key) as HDNodeWallet
+            const wallet = loadEncryptedWalletByAddress(accounts[0], this.key) as HDNodeWallet
            
-            const childWallet = wallet.deriveChild(firstWallet.accounts.indexOf(address))
+            const childWallet = wallet.deriveChild(accounts.indexOf(address))
             console.log(`childWallet address: ${childWallet.address}, address: ${address}`)
             return childWallet.privateKey
         },
@@ -147,24 +134,23 @@ export const useKeyStore = defineStore('keystore', {
             const res: Record<string, string> = {}
             const wallets = loadEncryptedWallets();
             for (const address of addresses) {
-                let wallet
                 if (this.simpleAccounts.includes(address)) {
-                    wallet = wallets[address]
-                    const simpleWallet = ethers.Wallet.fromEncryptedJsonSync(wallet.jsonData, this.key)
+                    const wallet = wallets[address]
+                    const simpleWallet = ethers.Wallet.fromEncryptedJsonSync(wallet, this.key)
                     res[address] = simpleWallet.privateKey
                 } else {
-                    const firstWallet = this.hdWallet.find(item => item.accounts.includes(address))
-                    if (!firstWallet) {
+                    const accounts = this.hdAccounts.find(item => item.includes(address))
+                    if (!accounts || accounts.length === 0) {
                         throw new Error(`not found wallet: ${address}`);
                     }
-                    wallet = wallets[firstWallet.first]
-                    let hdWallet = ethers.Wallet.fromEncryptedJsonSync(wallet.jsonData, this.key) as ethers.HDNodeWallet
-                    const index = firstWallet.accounts.indexOf(address);
+                
+                    const hdWallet = ethers.Wallet.fromEncryptedJsonSync(accounts[0], this.key) as ethers.HDNodeWallet
+                    const index = accounts.indexOf(address);
                     const hdRoot = ethers.HDNodeWallet.fromPhrase(hdWallet.mnemonic?.phrase as string)
                     if (index > 0) {
-                        hdWallet = hdRoot.deriveChild(index)
+                        res[address] = hdRoot.deriveChild(index).privateKey
                     }
-                    res[address] = hdWallet.privateKey
+                    
                 }
             }
             return res
@@ -173,7 +159,7 @@ export const useKeyStore = defineStore('keystore', {
         importPrivateKey(privateKey: string) {
             const wallet = new ethers.Wallet(privateKey)
             this.simpleAccounts.push(wallet.address)
-            saveEncryptedWallets({ ...loadEncryptedWallets(), [wallet.address]: { jsonData: wallet.encryptSync(this.key) } })
+            saveEncryptedWallets({ ...loadEncryptedWallets(), [wallet.address]: wallet.encryptSync(this.key) })
             return wallet.address
         },
         addAccounts(address: string, count = 10) {
@@ -182,25 +168,26 @@ export const useKeyStore = defineStore('keystore', {
             if (!wallet) {
                 throw new Error(`not found HD wallet: ${address}`);
             }
-            const hdWallet = ethers.Wallet.fromEncryptedJsonSync(wallet.jsonData, this.key) as ethers.HDNodeWallet
+            const hdWallet = ethers.Wallet.fromEncryptedJsonSync(wallet, this.key) as ethers.HDNodeWallet
+            const rootWallet = ethers.HDNodeWallet.fromPhrase(hdWallet.mnemonic?.phrase as string)
             const lastIndex = hdWallet.index + count
-            const lastWallet = hdWallet.deriveChild(lastIndex);
-            const hdRoot = ethers.HDNodeWallet.fromPhrase(hdWallet.mnemonic?.phrase as string)
+            const lastWallet = rootWallet.deriveChild(lastIndex);
             const addressList: string[] = []
             for (let i = hdWallet.index; i < lastIndex; i++) {
-                addressList.push(hdRoot.deriveChild(i).address)
+                addressList.push(rootWallet.deriveChild(i).address)
             }
-            saveEncryptedWallets({ ...wallets, [address]: { jsonData: lastWallet.encryptSync(this.key), name: wallet.name } })
-            const index = this.hdWallet.findIndex(item => item.first === address)
-            const oldWallet = this.hdWallet[index]
-            oldWallet.accounts.push(...addressList)
-            this.hdWallet.splice(index, 1, oldWallet);
+            saveEncryptedWallets({ ...wallets, [address]: lastWallet.encryptSync(this.key) })
+            const index = this.hdAccounts.findIndex(item => item.includes(address))
+            const oldHdAccounts = this.hdAccounts[index]
+            oldHdAccounts.push(...addressList)
+            this.hdAccounts.splice(index, 1, oldHdAccounts);
         },
         removeSimplePrivateKey(address: string) {
             const wallets = loadEncryptedWallets();
             const wallet = wallets[address]
             if (!wallet) {
-                throw new Error(`not found HD wallet: ${address}`);
+                // throw new Error(`not found simple wallet: ${address}`);
+                return
             }
             delete wallets[address]
             this.simpleAccounts.splice(this.simpleAccounts.indexOf(address), 1)
@@ -214,11 +201,15 @@ export const useKeyStore = defineStore('keystore', {
             }
             delete wallets[address]
             saveEncryptedWallets(wallets)
-            this.hdWallet.splice(this.hdWallet.findIndex(item => item.first === address), 1)
+            this.hdAccounts.splice(this.hdAccounts.findIndex(item => item.includes(address)), 1)
         },
         clearKey() {
             this.key = ''
             this.isLock = true
         },
+        confirmCreate() {
+            this.isCreated = true
+            this.isLock = false
+        }
     }
 })

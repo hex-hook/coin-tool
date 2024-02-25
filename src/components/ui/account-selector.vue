@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // a tree select component with wallet account
 // - select wallet or group
-// suport select one or more
+// support select one or more
 
 import { NTreeSelect,  } from 'naive-ui'
 import { useKeyStore } from '@/stores/key'
@@ -12,6 +12,7 @@ import type { TreeSelectOption } from 'naive-ui'
 interface Props {
     multiple: boolean
     filterPrivate: boolean
+    filterAddress?: string | string[]
 }
 
 interface Emits {
@@ -28,16 +29,17 @@ const selectedWallets = ref<string| string[]>(props.multiple ? [] : '')
 
 
 const accountsOptions = computed(() => {
+    const filterAddress = props.filterAddress || []
     const simpleWallet = {
         label: 'Simple Wallet',
         key: 'simple-wallet',
-        children: walletStore.groups.map(item => ({
+        children: walletStore.groups.filter(item => !item.address).map(item => ({
             label: item.name,
-            key: item.name,
-            children: walletStore.wallets.filter(o => o.group != 0).map(account => ({
+            key: item.id,
+            children: walletStore.wallets.filter(o => o.group == item.id).map(account => ({
                 label: `${account.name}(${account.address})`,
                 key: account.address,
-                disabled: props.filterPrivate && !keyStore.simpleAccounts.includes(account.address)
+                disabled: (props.filterPrivate && !keyStore.simpleAccounts.includes(account.address)) || filterAddress.includes(account.address)
             }))
         }))
     }
@@ -45,16 +47,20 @@ const accountsOptions = computed(() => {
         pre[cur.address] = cur.name
         return pre
     }, {} as Record<string, string>)
+    if (keyStore.hdAccounts.length == 0) {
+        return [simpleWallet] as TreeSelectOption[]
+    }
     const hdWallet = {
         label: 'HD Wallet',
         key: 'hd-wallet',
-        children: keyStore.hdWallet.map(item => ({
+        children: walletStore.groups.filter(item => item.address).map(item => ({
             label: item.name,
-            key: item.name,
-            children: item.accounts.map(account => ({
+            key: 'group-' + item.address,
+            children: keyStore.hdAccounts.find(wallets => wallets.includes(item.address as string))?.map(account => ({
                 label: `${hdAccountNameDict[account]??''}(${account})`,
-                key: account
-            }))
+                key: account,
+                disabled: filterAddress.includes(account)
+            })) || []
         }))
     }
     return [ hdWallet, simpleWallet] as TreeSelectOption[]

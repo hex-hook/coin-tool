@@ -4,7 +4,7 @@ import { TransactionLike } from 'ethers';
 
 interface Props {
     tx: TransactionLike
-    network: Wallet.Network
+    network: Chain.Network
     method: string
 }
 

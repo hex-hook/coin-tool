@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import TokenAssets from './token-assets.vue'
 import { NCard, NSelect, NSpace, NCheckbox, NCheckboxGroup } from 'naive-ui'
-import { useContractStore } from '@/stores/contract';
+import { useChainStore } from '@/stores/chain';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useWalletStore } from '@/stores/wallet';
-import { useKeyStore } from '@/stores/key';
 
-const keyStore = useKeyStore()
 const walletStore = useWalletStore()
-const contractStore = useContractStore()
+const chainStore = useChainStore()
 
 // const addressList = ref<string[]>([])//['0xe7Bbc2A3D9381A159CdC2DE6e86Aa080E0D9345C','0x400e2a7444dEa936b98190785CCcAb200B85Bc9F', '0xe91AcA39972c1Be2432e8ab15aEB51a39D706210']
 
@@ -19,7 +17,7 @@ const contractStore = useContractStore()
 const contractAddressList = ref<Chain.Token[]>([])
 
 const nativeCurrency = computed(() => {
-    return walletStore.networks.filter(item => item.chainId == walletStore.activeNetwork)
+    return chainStore.networks.filter(item => item.chainId == chainStore.activeChainId)
         .map(item => ({
             name: item.nativeCurrency,
             symbol: item.nativeCurrency,
@@ -30,12 +28,12 @@ const nativeCurrency = computed(() => {
         }))[0]
 })
 
-const activeNetwork = computed(() => walletStore.activeNetwork)
+const activeChainId = computed(() => chainStore.activeChainId)
 const groupOptions = computed(() => [
-    {type: 'group', label: 'HD Wallet', children: keyStore.hdWallet.map(item => ({ label: item.name, value: `0-HD-${item.name}` }))},
-    {type: 'group', label: 'Simple Wallet', children: walletStore.groups.map(item => ({ label: item.name, value: `${item.id}` }))}
+    {type: 'group', label: 'HD Wallet', children: walletStore.groups.filter(item => item.address).map(item => ({ label: item.name, value: `0-HD-${item.address}`}))},
+    {type: 'group', label: 'Simple Wallet', children: walletStore.groups.filter(item => !item.address).map(item => ({ label: item.name, value: `${item.id}` }))}
 ])
-const tokenOptions = computed(() => contractStore.tokens.filter(item => item.chainId == walletStore.activeNetwork))
+const tokenOptions = computed(() => chainStore.tokens.filter(item => item.chainId == chainStore.activeChainId))
 const selectedTokens = ref<string[]>([])
 const selectedGroup = ref<string>()
 
@@ -49,7 +47,7 @@ onMounted(() => {
     initTokens()
 })
 
-watch(activeNetwork, () => {
+watch(activeChainId, () => {
     initTokens()
 })
 
@@ -68,7 +66,7 @@ watch(selectedTokens, () => {
     // 添加新增的
     const addressList = contractAddressList.value.map(item => item.address)
     const addList = selectedList.filter(item => !addressList.includes(item))
-    const addTokenList = contractStore.tokens.filter(item => item.chainId == activeNetwork.value && addList.includes(item.address))
+    const addTokenList = chainStore.tokens.filter(item => item.chainId == activeChainId.value && addList.includes(item.address))
     for (const item of addTokenList) {
         contractAddressList.value.push(item)
     }
@@ -99,12 +97,14 @@ watch(tokenOptions, () => {
                 <n-select :options="groupOptions" v-model:value="selectedGroup" :style="{ width: '300px' }" />
             </n-space>
             <n-checkbox-group v-model:value="selectedTokens">
-                <n-checkbox v-for="item of tokenOptions" :value="item.address" :label="item.symbol" />
+                <n-checkbox v-for="item of tokenOptions" :value="item.address" :label="item.symbol" v-bind:key="item.address" />
             </n-checkbox-group>
 
         </n-card>
+        <template v-if="selectedGroup">
 
-        <TokenAssets v-if="nativeCurrency && selectedGroup" :token="nativeCurrency" :group-id="selectedGroup" />
-        <TokenAssets v-if="selectedGroup" v-for="item of contractAddressList" :token="item" :group-id="selectedGroup" />
+            <TokenAssets v-if="nativeCurrency" :token="nativeCurrency" :group-id="selectedGroup" />
+            <TokenAssets v-for="item of contractAddressList" :token="item" :group-id="selectedGroup" v-bind:key="item.address" />
+        </template>
     </n-space>
 </template>

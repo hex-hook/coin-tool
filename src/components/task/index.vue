@@ -3,7 +3,7 @@ import { NCard, NTable, NSpace, NButton, NModal } from 'naive-ui'
 import { ref } from 'vue';
 import Creator from './creator.vue'
 
-const taskList = ref<Task.Task[]>([
+const taskList = ref([
     {
         name: 'test',
         description: 'test',

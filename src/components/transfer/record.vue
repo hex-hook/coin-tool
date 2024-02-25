@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import { NCard, NTag, NTable } from 'naive-ui'
-import { useContractStore } from '@/stores/contract';
+import { useChainStore } from '@/stores/chain';
 import { computed } from 'vue';
-import { useWalletStore } from '@/stores/wallet';
 import { getAddress } from 'ethers';
 
-const contractStore = useContractStore()
-const walletStore = useWalletStore()
+const chainStore = useChainStore()
 
-const transferList = computed(() => contractStore.transactions.filter(item => item.chainId == walletStore.activeNetwork))
-const network = computed(() => walletStore.networks.find(item => item.chainId == walletStore.activeNetwork))
+const transferList = computed(() => chainStore.transactions.filter(item => item.chainId == chainStore.activeChainId))
+const network = computed(() => chainStore.networks.find(item => item.chainId == chainStore.activeChainId))
 
 </script>
 <template>

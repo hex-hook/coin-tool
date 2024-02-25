@@ -2,6 +2,7 @@
 import { NCard, NSpace, NInput, NButton, useMessage, NSelect } from 'naive-ui'
 import { useWalletStore } from '@/stores/wallet'
 import { computed, onMounted, ref } from 'vue';
+import { ethers } from 'ethers';
 
 interface Emits {
     (e: 'close'): void
@@ -17,7 +18,7 @@ const name = ref('')
 const address = ref('')
 const group = ref()
 
-const selectOption = computed(() => walletStore.groups.map(item => ({label: item.name, value: item.id})))
+const selectOption = computed(() => walletStore.groups.filter(item => !item.address).map(item => ({label: item.name, value: item.id})))
 const nameState = ref(true)
 const addressState = ref(false)
 
@@ -30,12 +31,12 @@ function checkAddress(): boolean {
     addressState.value = false
     const cur = address.value.trim()
     if (cur.length != 42 && !cur.startsWith('0x')) {
-        message.error('addres is failed')
+        message.error('address is failed')
         return false
     }
     const old = walletStore.wallets.find(item => item.address == cur)
     if (old) {
-        message.error('addres is already exist')
+        message.error('address is already exist')
         return false
     }
     addressState.value = true
@@ -63,7 +64,7 @@ function addHandle() {
         return
     }
     walletStore.add({
-        address: address.value.toLocaleLowerCase(),
+        address: ethers.getAddress(address.value),
         name: name.value,
         group: group.value,
         createdAt: Date.now(),

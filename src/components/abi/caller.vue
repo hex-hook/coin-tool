@@ -3,14 +3,14 @@ import { NSpace, NCard, NInput, NButton, NSwitch, NTag, NTable, useMessage, NInp
 import { onMounted, ref, h, watch } from 'vue';
 import AccountSelector from '@/components/ui/account-selector.vue'
 import { useKeyStore } from '@/stores/key';
-import { useWalletStore } from '@/stores/wallet';
 import ContractConfirm from '@/components/contract/confirm.vue'
 import { ChevronDownCircleOutline, ChevronUpCircleOutline } from '@vicons/ionicons5'
-import { JsonFragment, TransactionLike, ethers } from 'ethers'
+import { JsonFragment, TransactionLike, ethers, FunctionFragment } from 'ethers'
 import { useProvider } from '@/hooks/provider';
+import { useChainStore } from '@/stores/chain';
 
 interface Props {
-    data: JsonFragment
+    data: JsonFragment | FunctionFragment
     address: string
 }
 
@@ -32,7 +32,7 @@ const emit = defineEmits<Emits>()
 const dialog = useDialog()
 const message = useMessage()
 const keyStore = useKeyStore()
-const walletStore = useWalletStore()
+const chainStore = useChainStore()
 
 const values = ref<string[]>([])
 const response = ref('')
@@ -72,8 +72,8 @@ async function sendContract() {
     }
     const from = selectedAddress.value
     const to = props.address
-    const chainId = walletStore.activeNetwork
-    const network = walletStore.networks.find(item => item.chainId == chainId)
+    const chainId = chainStore.activeChainId
+    const network = chainStore.networks.find(item => item.chainId == chainId)
     if (!network) {
         message.error('network is failed')
         return
@@ -93,7 +93,7 @@ async function sendContract() {
         positiveText: '确定',
         onPositiveClick: async () => {
             const priKey = keyStore.exportPrivate(selectedAddress.value)
-            const wallet = new ethers.Wallet('0x' + priKey, useProvider().value)
+            const wallet = new ethers.Wallet(priKey, useProvider().value)
             const contract = new ethers.Contract(props.address, [props.data], wallet)
             const args = values.value
             if (props.data.inputs) {
@@ -106,19 +106,7 @@ async function sendContract() {
                 }
             }
             const res = await contract[`${props.data.name}`](...args)
-            await res.await()
-            // const item = {
-            //     chainId: network.chainId,
-            //     tx: hash,
-            //     symbol: network?.nativeCurrency || 'ETH',
-            //     from: tx.from,
-            //     to: tx.to,
-            //     createdAt: Date.now(),
-            //     count: `${tx.value || 0}`,
-            //     method: `contract:${props.data.name}`,
-            //     contractAddress: props.address
-            // }
-            // contractStore.addTransaction(item)
+            await res.wait()
         
         }
     })
@@ -196,7 +184,7 @@ watch(payValue, () => {
 
                     </thead>
                     <tbody>
-                        <tr v-for="(param, index) of props.data.inputs">
+                        <tr v-for="(param, index) of props.data.inputs" :key="'input-' + index">
                             <td>{{ param.name }}</td>
                             <td>{{ param.type }}</td>
                             <td>

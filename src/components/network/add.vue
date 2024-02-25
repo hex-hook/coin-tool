@@ -1,17 +1,27 @@
 <script setup lang="ts">
 import { useMessage, NCard, NSpace, NButton, NInput, NSwitch, NInputNumber } from 'naive-ui'
-import { ref } from 'vue';
-import { useWalletStore } from '@/stores/wallet'
+import { onMounted, ref } from 'vue';
+import { useChainStore } from '@/stores/chain'
+import { DEFAULT_NETWORKS } from '@/assets/network'
+
 
 interface Emits {
     (e: 'close'): void
 }
 
-const walletStore = useWalletStore()
+interface Props {
+    id?: string
+}
+
+const chainStore = useChainStore()
 const message = useMessage()
 const emit = defineEmits<Emits>()
+const props = defineProps<Props>()
+
+const resettable = ref(DEFAULT_NETWORKS.findIndex(item => item.chainId == props.id) >= 0)
 
 const chainId = ref(1)
+const chainIdDisabled = ref(false)
 const name = ref('')
 const nativeCurrency = ref('')
 const domain = ref('')
@@ -20,6 +30,25 @@ const rpcUrl = ref('')
 const blockExplorerUrl = ref('')
 const imageUrl = ref('')
 const isTest = ref(true)
+
+onMounted(() => {
+    if (!props.id) {
+        return
+    }
+    chainId.value = parseInt(props.id)
+    const item = chainStore.networks.find(item => item.chainId == props.id)
+    if (item) {
+        chainIdDisabled.value = true
+        name.value = item.name
+        nativeCurrency.value = item.nativeCurrency
+        domain.value = item.domain
+        subdomain.value = item.subdomain
+        rpcUrl.value = item.rpcUrl
+        blockExplorerUrl.value = item.blockExplorerUrl
+        imageUrl.value = item.imageUrl
+        isTest.value = item.isTest
+    }
+})
 
 function close() {
     emit('close')
@@ -47,11 +76,6 @@ function checkData(): boolean {
         message.error('nativeCurrency is null')
         return false
     }
-    const index = walletStore.networks.findIndex(item => item.chainId == convert16(chainId.value))
-    if (index >= 0) {
-        message.error('Chain is already exist')
-        return false
-    }
     return true
 }
 
@@ -60,7 +84,7 @@ function save() {
     if (!checkData()) {
         return
     }
-    walletStore.addNetwork({
+    chainStore.updateNetwork({
         chainId: convert16(chainId.value),
         name: name.value,
         nativeCurrency: nativeCurrency.value,
@@ -74,13 +98,31 @@ function save() {
     close()
 }
 
+function resetNetwork() {
+    if (props.id) {
+        const item = DEFAULT_NETWORKS.find(item => item.chainId == props.id)
+        if (item) {
+            chainId.value = parseInt(item.chainId)
+            name.value = item.name
+            nativeCurrency.value = item.nativeCurrency
+            domain.value = item.domain
+            subdomain.value = item.subdomain
+            rpcUrl.value = item.rpcUrl
+            blockExplorerUrl.value = item.blockExplorerUrl
+            imageUrl.value = item.imageUrl
+            isTest.value = item.isTest
+        }
+    }
+}
+
 </script>
 
 <template>
     <n-card :style="{width:'600px'}">
         <n-space vertical>
-            <n-space justify="center">
-                <h3>Add Network</h3>  
+            <n-space justify="center" align="center">
+                <h3>{{ props.id ? 'Update' : 'Add' }} Network</h3>  
+                <n-button round v-if="resettable" @click="resetNetwork" type="info" size="small">Reset</n-button>
             </n-space>
             <n-space align="center">
                 <div class="label">Id</div>
@@ -91,7 +133,7 @@ function save() {
                 <n-input v-model:value="name" :style="{width: '300px'}"/>
             </n-space>
             <n-space align="center">
-                <div class="label">VativeCurrency</div>
+                <div class="label">NativeCurrency</div>
                 <n-input v-model:value="nativeCurrency" :style="{width: '300px'}"/>
             </n-space>
             <n-space align="center">

@@ -1,10 +1,11 @@
 <script setup lang="ts">
 // import hd wallet by mnemonic
 // - input wallet name and mnemonic
-// default inport 10 accounts, can change it
+// default import 10 accounts, can change it
 import { useMessage, NInput, NCard, NSpace, NButton, NInputNumber } from 'naive-ui'
 import { ref } from 'vue';
 import { useKeyStore } from '@/stores/key';
+import { useWalletStore } from '@/stores/wallet';
 
 // close modal emit
 // 1. define a interface by emit
@@ -14,6 +15,7 @@ interface Emits {
 
 const message = useMessage()
 const keyStore = useKeyStore()
+const walletStore = useWalletStore()
 const emit = defineEmits<Emits>()
 
 // 2. set value save name and mnemonic, account count
@@ -33,7 +35,7 @@ function importWallet() {
         message.warning('name is empty')
         return
     }
-    if (keyStore.hdWallet.find(item => item.name == name.value)) {
+    if (keyStore.hdAccounts.find(item => item.includes(name.value))) {
         message.warning('name is already exist')
         return
     }
@@ -42,7 +44,14 @@ function importWallet() {
         return
     }
     try {
-        keyStore.createHDWallet(name.value, count.value, mnemonic.value)
+        const res = keyStore.createHDWallet(count.value, mnemonic.value)
+        const lastId = walletStore.groups.map(item => item.id).sort((a, b) => a - b)[0]
+        walletStore.addGroup({
+            id: lastId+1,
+            name: name.value,
+            address: res[1],
+            description: ''
+        })
     } catch (error: any) {
         message.error(error.message)
         return

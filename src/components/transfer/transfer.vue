@@ -1,24 +1,23 @@
 <script setup lang="ts">
-import { ref, watch, h, computed } from 'vue';
+import { ref, watch, h } from 'vue';
 import { NCard, NSpace, NSwitch, NButton, NInputNumber, useMessage, useDialog, NSelect } from 'naive-ui'
 import { useKeyStore } from '@/stores/key';
 import AccountSelector from '@/components/ui/account-selector.vue'
 import OrderConfirm from '@/components/ui/order-confirm.vue'
-import { useWalletStore } from '@/stores/wallet';
-import { useContractStore } from '@/stores/contract';
 import { useERC20ByWallet, useProvider } from '@/hooks/provider';
 import { ethers, TransactionRequest, Wallet } from 'ethers';
-// wallet transfer to wallet by web3js
+import { useTokenOptions } from '@/hooks/chain';
+import { useChainStore } from '@/stores/chain';
+// wallet transfer to wallet by web3
 // - input wallet address
 // - input token count
 // - input target wallet address
 // - send
 const keyStore = useKeyStore()
-const walletStore = useWalletStore()
-const contractStore = useContractStore()
 const message = useMessage()
 const dialog = useDialog()
 const provider = useProvider()
+const chainStore = useChainStore()
 
 const tokenCount = ref(0)
 
@@ -28,22 +27,7 @@ const isOneToMore = ref(true)
 const selectedSourceWallet = ref<string | string[]>('')
 const selectedTargetWallet = ref<string | string[]>([])
 const tokenAddress = ref('0x')
-const tokenOptions = computed(() => {
-    const chainId = walletStore.activeNetwork
-    const network = walletStore.networks.find(item => item.chainId == chainId)
-    const nativeCurrency = network?.nativeCurrency || 'Unknow'
-    const contracts = contractStore.tokens.filter(item => item.chainId == chainId)
-    return [
-        {
-            label: nativeCurrency,
-            value: '0x'
-        },
-        ...contracts.map(item => ({
-            label: item.symbol,
-            value: item.address
-        }))
-    ]
-})
+const tokenOptions = useTokenOptions()
 
 
 // send token
@@ -57,10 +41,12 @@ async function send(from: string, to: string, count: number, wallet: Wallet, non
     const tx: TransactionRequest = {
         from,
         to,
-        value: ethers.parseUnits(count.toString(), 'ether'),
+        value: ethers.parseEther(count.toString()),
         nonce,
     }
     const gas = await provider.value.estimateGas(tx)
+    const chainId = '0x' + provider.value._network.chainId.toString(16)
+    const symbol = chainStore.networks.find(item => item.chainId == chainId)?.nativeCurrency || 'ETH'
     // get gas price by ethers
     const { gasPrice } = await provider.value.getFeeData()
     const receipt = await wallet.sendTransaction({
@@ -68,53 +54,51 @@ async function send(from: string, to: string, count: number, wallet: Wallet, non
         gasPrice: gasPrice,
         gasLimit: gas.toString()
     })
+    console.log(receipt)
     await receipt.wait()
-    // message.success(`tx hash: ${hash}`)
-    //         txHash.value = hash
-    //         const chainId = walletStore.activeNetwork
-    //         const network = walletStore.networks.find(item => item.chainId == chainId)
-    //         const item = {
-    //             chainId,
-    //             tx: hash,
-    //             symbol: network?.nativeCurrency || 'ETH',
-    //             from,
-    //             to,
-    //             createdAt: Date.now(),
-    //             count: count.toString(),
-    //             method: 'transfer',
-    //         }
-    // contractStore.addTransaction(item)
-
+    chainStore.addTransaction({
+        chainId,
+        tx: receipt.hash,
+        symbol,
+        from,
+        to,
+        createdAt: Date.now(),
+        count: count.toString(),
+        method: 'transfer',
+    })
 }
 
 async function sendToken(from: string, to: string, count: number, wallet: Wallet, nonce?: number) {
     const contract = useERC20ByWallet(tokenAddress.value, wallet)
-    const tokenAmount = ethers.parseEther(count.toString())
+    const chainId = '0x' + provider.value._network.chainId.toString(16)
+    const token = chainStore.tokens.find(item => item.address == tokenAddress.value && item.chainId == chainId)
+    if (!token) {
+        console.log(chainId)
+        message.error('token not found')
+        return
+    }
+    const tokenAmount = ethers.parseUnits(count.toString(), token.decimals)
     console.log(`from: ${from} to: ${to} count: ${count} tokenAmount: ${tokenAmount}`)
     const tx = await contract.transfer(to, tokenAmount, { nonce })
-    await tx.await()
-
-    // const chainId = walletStore.activeNetwork
-    //         const network = walletStore.networks.find(item => item.chainId == chainId)
-    //         const item = {
-    //             chainId,
-    //             tx: hash,
-    //             symbol: network?.nativeCurrency || 'ETH',
-    //             from,
-    //             to,
-    //             createdAt: Date.now(),
-    //             count: count.toString(),
-    //             method: 'transfer',
-    //             contractAddress: tokenAddress.value
-    //         }
-    //         contractStore.addTransaction(item)
+    await tx.wait()
+    chainStore.addTransaction({
+        chainId,
+        tx: tx.hash,
+        symbol: token.symbol,
+        from,
+        to,
+        createdAt: Date.now(),
+        count: count.toString(),
+        method: 'transfer',
+        contractAddress: tokenAddress.value
+    })
 }
 
 async function sendOneToMore() {
     const source = selectedSourceWallet.value as string
     const target = selectedTargetWallet.value as string[]
     const key = await keyStore.exportPrivate(source)
-    const wallet = new ethers.Wallet('0x' + key, provider.value)
+    const wallet = new ethers.Wallet(key, provider.value)
     const nonce = await provider.value.getTransactionCount(source);
     const isERC20 = tokenAddress.value != '0x'
     for (let i = 0; i < target.length; i++) {
@@ -133,6 +117,7 @@ async function sendMoreToOne() {
     const keyDict = await keyStore.batchExportPrivate(source)
     const isERC20 = tokenAddress.value != '0x'
     for (const address in keyDict) {
+        // todo nonce get by ethers
         const wallet = new ethers.Wallet('0x' + keyDict[address], provider.value)
         if (isERC20) {
             await sendToken(address, target, tokenCount.value, wallet)
@@ -196,7 +181,7 @@ async function sendAll() {
                 from: selectedSourceWallet.value,
                 to: selectedTargetWallet.value,
                 count: tokenCount.value,
-                symbol: tokenOptions.value.find(item => item.value == tokenAddress.value)?.label || 'Unknow',
+                symbol: tokenOptions.value.find(item => item.value == tokenAddress.value)?.label || '-',
             })
         },
         negativeText: '取消',
@@ -247,7 +232,7 @@ function updateTargetWallet(address: string | string[]) {
                         <n-button round type="primary" @click="sendAll">Send</n-button>
                     </n-space>
                 </n-space>
-                <AccountSelector :multiple="isOneToMore" :filter-private="!isOneToMore" @update-value="updateTargetWallet"/>
+                <AccountSelector :multiple="isOneToMore" :filter-private="!isOneToMore" @update-value="updateTargetWallet" :filter-address="selectedSourceWallet"/>
             </n-space>
         </n-space>
     </n-card>
